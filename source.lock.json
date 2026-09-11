@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "base_repository": "https://github.com/BaconMakin/MagnusPS5.git",
+  "base_revision": "9c9e3a03dd7fefbaf3ea28918c67f007983bb761",
+  "bundle": "source/reconstruction.bundle",
+  "bundle_sha256": "38a8232be5db9ddf46d9e18659a5e26f343108ef579efeb2aa9895ceda19996c",
+  "bundle_size": 586253,
+  "source_revision": "b817b57a559d7cff6c62c212c9013c9ebd17e03c",
+  "source_tree": "51acd7c2494f7833636f6efd0fa7f8eb4a303ce0",
+  "kyty_revision": "2e315a3c62bf036c8225d5057ada1d70cd8063f1",
+  "fex_repository": "https://github.com/willfaust/FEX.git",
+  "fex_revision": "053c385ecc9090702e4959a1d96752ea918a6110",
+  "status": "Experimental source reconstruction. Not a linked or device-tested iOS app."
+}

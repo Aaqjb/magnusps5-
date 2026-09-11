@@ -1,0 +1,123 @@
+name: Reconstructed core and iPhoneOS compile
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'source/**'
+      - 'source.lock.json'
+      - 'ci/**'
+      - '.github/workflows/validate.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: magnus-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  portable:
+    name: Updated-core regression tests (Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Verify and reconstruct the exact source revision
+        run: python3 ci/materialize_source.py
+      - name: Audit production source selection
+        run: cmake -S checkout/tests/source-selection -B build-selection
+      - name: Python and JIT-script regression tests
+        run: |
+          python3 -m unittest discover -s checkout/tests -p 'test_*.py' -v
+          node --test checkout/tests/jit_protocol.test.cjs
+      - name: Build and execute CPU-side tests
+        run: |
+          cmake -S checkout/tests/portable -B build-portable -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          cmake --build build-portable --parallel 2
+          ctest --test-dir build-portable --output-on-failure
+      - name: Save regression evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: linux-regression-evidence
+          path: |
+            source.lock.json
+            build-portable/Testing/Temporary/LastTest.log
+            build-selection/magnusCoreBuild.h
+          retention-days: 3
+
+  iphoneos:
+    name: iPhoneOS SDK and FEX/bridge compile (not an IPA)
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Verify and reconstruct the exact source revision
+        run: python3 ci/materialize_source.py
+      - name: Record the actual Apple toolchain
+        run: |
+          mkdir -p evidence
+          xcodebuild -version | tee evidence/xcode.txt
+          xcrun --sdk iphoneos --show-sdk-version | tee evidence/sdk.txt
+          cmake --version
+          uname -m
+      - name: Audit production source selection
+        run: cmake -S checkout/tests/source-selection -B build-selection
+      - name: Compile app, JIT protocol and CPU interface with the device SDK
+        run: python3 ci/check_iphoneos.py --source checkout --output evidence/iphoneos 2>&1 | tee evidence/iphoneos.log
+      - name: Fetch the pinned FEX source without modifying it
+        run: |
+          git init fex
+          git -C fex fetch --depth=1 --no-tags https://github.com/willfaust/FEX.git 053c385ecc9090702e4959a1d96752ea918a6110
+          git -C fex checkout --detach 053c385ecc9090702e4959a1d96752ea918a6110
+          git -C fex submodule update --init --depth=1 External/vixl External/fmt External/xxhash External/unordered_dense External/range-v3
+          git -C fex submodule status | tee evidence/fex-submodules.txt
+      - name: Configure native iPhoneOS FEX (no simulator or diagnostic shims)
+        run: |
+          cmake -S fex -B build-fex -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=17.4 -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DBUILD_TESTING=OFF -DBUILD_FEX_LINUX_TESTS=OFF -DBUILD_FEXCONFIG=OFF \
+            -DBUILD_THUNKS=OFF -DENABLE_CLANG_THUNKS=OFF -DENABLE_LTO=OFF \
+            -DENABLE_CCACHE=OFF -DENABLE_VIXL_SIMULATOR=OFF \
+            -DENABLE_FEX_ALLOCATOR=OFF -DENABLE_JEMALLOC_GLIBC_ALLOC=OFF \
+            -DENABLE_OFFLINE_TELEMETRY=OFF -DENABLE_GDB_SYMBOLS=OFF \
+            2>&1 | tee evidence/fex-configure.log
+      - name: Build actual FEXCore for iPhoneOS
+        run: cmake --build build-fex --target FEXCore --parallel 2 2>&1 | tee evidence/fex-build.log
+      - name: Compile our bridge against that exact FEX configuration
+        run: python3 ci/compile_fex_bridge.py --source checkout --fex-build build-fex --output evidence/bridge 2>&1 | tee evidence/bridge.log
+      - name: Confirm FEX source was not modified
+        if: always()
+        run: |
+          if [ -d fex/.git ]; then
+            git -C fex diff --exit-code
+            git -C fex diff --cached --exit-code
+          fi
+      - name: Save Apple compiler evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: iphoneos-compile-evidence-not-an-ipa
+          path: |
+            source.lock.json
+            evidence/
+            build-fex/CMakeCache.txt
+            build-fex/compile_commands.json
+            build-fex/CMakeFiles/CMakeConfigureLog.yaml
+          retention-days: 3
