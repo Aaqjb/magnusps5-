@@ -3,6 +3,7 @@
 Experimental reconstruction using Kyty revision `2e315a3c62bf`.
 
 [Build instructions and current limits](CLOUD-BUILD.md) ·
+[Verified build results](VALIDATION.md) ·
 [GitHub Actions](https://github.com/Aaqjb/magnusps5-/actions/workflows/validate.yml)
 
 The source bundle contains the updated core and reconstructed FEX bridge.

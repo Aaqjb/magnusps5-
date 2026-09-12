@@ -1,0 +1,45 @@
+{
+  "status": "Strict whole-archive FEX/bridge link only; no Magnus app or device execution",
+  "source_revision": "b817b57a559d7cff6c62c212c9013c9ebd17e03c",
+  "fex_revision": "053c385ecc9090702e4959a1d96752ea918a6110",
+  "fex_compat_patch_sha256": "45bd467feb86872a72b2edf9a828beb652d042e4f3cc957da1dcafc867471cc1",
+  "product": {
+    "file": "MagnusFexLinkProbe.dylib",
+    "sha256": "7c007cd58d7aa8d6c81328fd5eeae69f6b75bd4ae4e600af9f8e2efc7edf4a7b",
+    "platform": "/Users/runner/work/magnusps5-/magnusps5-/evidence/link/MagnusFexLinkProbe.dylib:\nLoad command 10\n      cmd LC_BUILD_VERSION\n  cmdsize 32\n platform IOS\n    minos 17.4\n      sdk 18.5\n   ntools 1\n     tool LD\n  version 1167.5"
+  },
+  "input_archives": [
+    {
+      "path": "FEXCore/Source/libFEXCore.a",
+      "sha256": "df49c462a9c7e6546827ba648626e4c2ac308c8f3651f5ac1abd7eaa34686bcd"
+    },
+    {
+      "path": "FEXCore/Source/libFEXCore_Base.a",
+      "sha256": "6c703f5bf93e3c9fe59e7bcdce6a458aefa876a8afcdd898495066ead3fa8b8f"
+    },
+    {
+      "path": "FEXCore/Source/libJemallocLibs.a",
+      "sha256": "24fcb236aa803fab76eaa8a016af30e55194dc278766b0aea7aa7086b85d0295"
+    },
+    {
+      "path": "External/tiny-json/libtiny-json.a",
+      "sha256": "87441c67499aac2e57df4ea26c82204f2426e65787aff9250e9e11216ec86431"
+    },
+    {
+      "path": "External/fmt/libfmt.a",
+      "sha256": "34e5b0410f5831eb4df093557771945c89a2a3d81b89a988332dddff5d6d893c"
+    },
+    {
+      "path": "External/xxhash/cmake_unofficial/libxxhash.a",
+      "sha256": "59a7528db757f2df1e887d55833eaa37c29e7370c0972d1edc54bdb5b4c54e25"
+    },
+    {
+      "path": "External/cephes/libcephes_128bit.a",
+      "sha256": "11873746f3c6de6ff4e2e549dd17421c832971fa419a0e1ea3bc4d4b464eccf9"
+    },
+    {
+      "path": "External/SoftFloat-3e/libsoftfloat_3e.a",
+      "sha256": "65e4d437c31250840cad90ffd82cbed202dedc343298ca8b04592e31373b0259"
+    }
+  ]
+}
