@@ -1,0 +1,5 @@
+__pycache__/
+checkout/
+build-*/
+evidence/
+fex/
