@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compile our bridge using the real FEX iPhoneOS build's ABI/header settings.
 
-FEX source is not modified. No Linux diagnostic shims or fake SDK are allowed.
+The only FEX patch is verified separately. No Linux shims or fake SDK are allowed.
 """
 import argparse
 import json

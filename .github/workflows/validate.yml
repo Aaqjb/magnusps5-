@@ -77,13 +77,15 @@ jobs:
         run: cmake -S checkout/tests/source-selection -B build-selection
       - name: Compile app, JIT protocol and CPU interface with the device SDK
         run: python3 ci/check_iphoneos.py --source checkout --output evidence/iphoneos 2>&1 | tee evidence/iphoneos.log
-      - name: Fetch the pinned FEX source without modifying it
+      - name: Fetch the pinned FEX source
         run: |
           git init fex
           git -C fex fetch --depth=1 --no-tags https://github.com/willfaust/FEX.git 053c385ecc9090702e4959a1d96752ea918a6110
           git -C fex checkout --detach 053c385ecc9090702e4959a1d96752ea918a6110
           git -C fex submodule update --init --depth=1 External/vixl External/fmt External/xxhash External/unordered_dense External/range-v3
           git -C fex submodule status | tee evidence/fex-submodules.txt
+      - name: Apply the checked native diagnostic compatibility patch
+        run: python3 ci/fex_compat.py apply --source fex | tee evidence/fex-patch.json
       - name: Configure native iPhoneOS FEX (no simulator or diagnostic shims)
         run: |
           cmake -S fex -B build-fex -G Ninja \
@@ -108,12 +110,11 @@ jobs:
         # Ninja continues independent files but still returns failure. This
         # exposes all native-port errors without weakening the required gate.
         run: cmake --build build-fex --target FEXCore FEXCore_Base JemallocLibs --parallel 2 -- -k 0 2>&1 | tee evidence/fex-build.log
-      - name: Confirm FEX source was not modified
+      - name: Verify FEX has only the reviewed compatibility changes
         if: always()
         run: |
-          if [ -d fex/.git ]; then
-            git -C fex diff --exit-code
-            git -C fex diff --cached --exit-code
+          if [ -f evidence/fex-patch.json ]; then
+            python3 ci/fex_compat.py verify --source fex
           fi
       - name: Save Apple compiler evidence, including failures
         if: always()

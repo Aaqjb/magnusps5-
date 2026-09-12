@@ -53,6 +53,25 @@ still fails the job. This gathers the real native-port errors in one run.
 Bridge object compilation does not depend on a completed FEX archive, so a
 dependency failure cannot conceal whether our own adapter compiles for iOS.
 
+## Native FEX compatibility patch
+
+The initial real SDK runs exposed two Windows-specific diagnostic blocks in the
+pinned fork that could not compile for a native Apple target. This repository
+carries a 13-line compatibility patch in `ci/patches/`:
+
+- Gate frontend-specific counter reporting with the same `FEX_IOS_HOST`
+  condition as the counters' producers.
+- Keep the misaligned-atomic address report on Apple; restrict Windows virtual
+  memory metadata queries to Windows builds.
+- Exclude the rpmalloc snapshot reader on Apple, where this pinned fork's CMake
+  configuration disables that allocator.
+
+The patch adds no dummy CPU, allocation, signal or memory-query functions. The
+atomic instruction handler and failure return remain in place. The workflow
+verifies the base revision, patch SHA-256, and the complete staged diff before
+and after building. This is a compatibility patch for this Magnus build; no
+change is submitted to the upstream FEX repository.
+
 ## What passing does not prove
 
 These jobs do **not** link the complete app, produce an IPA, execute JIT on an
@@ -63,8 +82,8 @@ simulation, but that does not establish Apple runtime readiness.
 Remaining work includes the Darwin JIT/signal/allocation bootstrap, executable
 mapping callbacks and complete typed HLE registration, plus compatible iOS
 MoltenVK/FFmpeg dependencies and the final app link/device tests. The iPhoneOS
-FEX build itself is an unvalidated experiment; no source edits or Linux-only
-diagnostic shims are applied to the FEX dependency.
+FEX build itself must be assessed from the recorded run. Only the explicit
+diagnostic compatibility patch is applied; Linux test shims are not used.
 
 Once the missing platform integration and dependencies exist, the reconstructed
 source has `tools/build_ipa.py`. That build requires a fresh device app, verifies

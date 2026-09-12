@@ -10,5 +10,7 @@
   "kyty_revision": "2e315a3c62bf036c8225d5057ada1d70cd8063f1",
   "fex_repository": "https://github.com/willfaust/FEX.git",
   "fex_revision": "053c385ecc9090702e4959a1d96752ea918a6110",
+  "fex_compat_patch": "ci/patches/fex-native-diagnostics.patch",
+  "fex_compat_patch_sha256": "45bd467feb86872a72b2edf9a828beb652d042e4f3cc957da1dcafc867471cc1",
   "status": "Experimental source reconstruction. Not a linked or device-tested iOS app."
 }
