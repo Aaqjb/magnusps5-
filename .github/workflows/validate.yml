@@ -1,4 +1,4 @@
-name: Reconstructed core and iPhoneOS compile
+name: Reconstructed core and full iPhoneOS build
 
 on:
   workflow_dispatch:
@@ -55,7 +55,7 @@ jobs:
           retention-days: 3
 
   iphoneos:
-    name: iPhoneOS SDK and FEX/bridge compile (not an IPA)
+    name: Full iPhoneOS app and verified unsigned IPA
     runs-on: macos-15
     timeout-minutes: 60
     env:
@@ -112,6 +112,30 @@ jobs:
         run: cmake --build build-fex --target FEXCore FEXCore_Base JemallocLibs tiny-json --parallel 2 -- -k 0 2>&1 | tee evidence/fex-build.log
       - name: Strictly link FEX and our bridge without unresolved-symbol fallback
         run: python3 ci/link_fex_bridge.py --fex-build build-fex --evidence evidence 2>&1 | tee evidence/link.log
+      - name: Obtain checked device graphics and build pinned audio dependencies
+        run: python3 ci/app_dependencies.py 2>&1 | tee evidence/dependencies.log
+      - name: Install the host shader compiler
+        run: brew install glslang
+      - name: Build the complete app and verify its active core before packaging
+        run: |
+          python3 checkout/tools/build_ipa.py \
+            --fex-root fex --fex-build build-fex \
+            --moltenvk-library build-dependencies/MoltenVK/MoltenVK/static/MoltenVK.xcframework/ios-arm64/libMoltenVK.a \
+            --moltenvk-include build-dependencies/MoltenVK/MoltenVK/include \
+            --ffmpeg-root build-dependencies/ffmpeg \
+            --output build-app/MagnusPS5-unsigned.ipa \
+            2>&1 | tee evidence/app-build.log
+      - name: Upload verified unsigned IPA
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: MagnusPS5-unsigned-IPA-device-unverified
+          if-no-files-found: error
+          path: |
+            build-app/MagnusPS5-unsigned.ipa
+            build-app/MagnusPS5-unsigned.build.json
+            build-app/MagnusPS5-unsigned.map
+            build-app/MagnusPS5-unsigned.entitlements
+          retention-days: 7
       - name: Verify FEX has only the reviewed compatibility changes
         if: always()
         run: |
@@ -129,4 +153,8 @@ jobs:
             build-fex/CMakeCache.txt
             build-fex/compile_commands.json
             build-fex/CMakeFiles/CMakeConfigureLog.yaml
+            build-dependencies/dependencies.json
+            build-dependencies/ffmpeg-source/ffbuild/config.log
+            build-app/**/CMakeCache.txt
+            build-app/**/CMakeFiles/CMakeConfigureLog.yaml
           retention-days: 3
