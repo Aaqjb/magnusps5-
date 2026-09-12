@@ -107,7 +107,7 @@ jobs:
         if: ${{ !cancelled() && hashFiles('build-fex/build.ninja') != '' }}
         # Ninja continues independent files but still returns failure. This
         # exposes all native-port errors without weakening the required gate.
-        run: cmake --build build-fex --target FEXCore --parallel 2 -- -k 0 2>&1 | tee evidence/fex-build.log
+        run: cmake --build build-fex --target FEXCore FEXCore_Base JemallocLibs --parallel 2 -- -k 0 2>&1 | tee evidence/fex-build.log
       - name: Confirm FEX source was not modified
         if: always()
         run: |
