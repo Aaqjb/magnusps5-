@@ -44,6 +44,10 @@ The selected Apple environment is `macos-15` with Xcode 16.4 and an iOS 17.4
 deployment target. If GitHub removes that Xcode installation, the run should
 fail visibly until the environment is deliberately updated.
 
+The FEX cross-build uses `TUNE_CPU=none` and `TUNE_ARCH=generic`. This retains
+Clang's explicit arm64 iPhoneOS target instead of trying to tune for a Linux
+runner CPU through `/proc/cpuinfo`. It requires no edits to FEX source.
+
 ## What passing does not prove
 
 These jobs do **not** link the complete app, produce an IPA, execute JIT on an

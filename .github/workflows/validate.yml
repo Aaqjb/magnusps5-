@@ -88,6 +88,7 @@ jobs:
         run: |
           cmake -S fex -B build-fex -G Ninja \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DTUNE_CPU=none -DTUNE_ARCH=generic \
             -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=17.4 -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \

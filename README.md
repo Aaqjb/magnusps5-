@@ -1,1 +1,10 @@
 # magnusps5-
+
+Experimental reconstruction using Kyty revision `2e315a3c62bf`.
+
+[Build instructions and current limits](CLOUD-BUILD.md) ·
+[GitHub Actions](https://github.com/Aaqjb/magnusps5-/actions/workflows/validate.yml)
+
+The source bundle contains the updated core and reconstructed FEX bridge.
+Actions verifies and unpacks that exact source before compiling it.
+This project does not yet produce a working IPA.
