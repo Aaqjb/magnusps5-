@@ -177,5 +177,7 @@ jobs:
             build-dependencies/dependencies.json
             build-dependencies/ffmpeg-source/ffbuild/config.log
             build-app/**/CMakeCache.txt
+            build-app/**/compile_commands.json
+            build-app/**/magnus-core-selected-sources.txt
             build-app/**/CMakeFiles/CMakeConfigureLog.yaml
           retention-days: 3

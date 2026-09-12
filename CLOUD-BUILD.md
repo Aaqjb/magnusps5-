@@ -1,7 +1,7 @@
 # MagnusPS5 reconstruction — cloud validation
 
 This repository builds the reconstructed source based on Kyty revision
-`2e315a3c62bf036c8225d5057ada1d70cd8063f1`. It does not use an existing IPA or an
+`dff2b19c56f9f4309a40017e15c0d2f80fec2605`. It does not use an existing IPA or an
 old precompiled emulator library. The reconstruction is experimental, not a
 working PS5 emulator release.
 
@@ -26,10 +26,10 @@ moving upstream branches are not build inputs.
 
 ## What Actions checks
 
-Under **Actions → Reconstructed core and iPhoneOS compile → Run workflow**:
+Under **Actions → Reconstructed core and full iPhoneOS build → Run workflow**:
 
 - Linux: actual production source-selection audit, Python/JavaScript checks,
-  and seven compiled CPU-side regression executables.
+  and eight compiled CPU-side regression executables, including page protection.
 - macOS: real iPhoneOS/arm64 compilation of the UIKit app source, JIT protocol
   and CPU interface; compilation of our bridge against FEX's real generated
   headers and ABI options; and an independent native iPhoneOS FEXCore build.
@@ -38,6 +38,13 @@ Under **Actions → Reconstructed core and iPhoneOS compile → Run workflow**:
   Support libraries resolve the core's references normally. Undefined symbols
   fail the link; no fallback symbol lookup or dead stripping is used. This
   dylib is not the Magnus app.
+- The full app build uses verified MoltenVK 1.4.2 device libraries and a pinned
+  FFmpeg 5.1.8 source build. Dependencies are cached after every installed file
+  is hashed; restored caches must match those hashes and source pins.
+- The complete app links the new core, FEX bridge and native startup. Packaging
+  requires device arm64/iOS metadata, the reviewed core identity, and renderer
+  and bridge implementation objects in the final link map. Only a passing
+  package step uploads the unsigned IPA, retained for seven days.
 - All steps are required. Compiler errors fail the run and are preserved in
   diagnostic artifacts. A failure does not silently select an older core.
 
@@ -77,21 +84,22 @@ verifies the base revision, patch SHA-256, and the complete staged diff before
 and after building. This is a compatibility patch for this Magnus build; no
 change is submitted to the upstream FEX repository.
 
-## What passing does not prove
+## Device validation still required
 
-These jobs do **not** link the complete app, produce an IPA, execute JIT on an
-iPhone, render a game, or confirm entitlement availability. The FEX runtime
-adapter previously executed real translated x86 test programs in Linux VIXL
-simulation, but that does not establish Apple runtime readiness.
+The workflow attempts the complete app and IPA. Consult the recorded run result
+to establish whether those stages passed. A passing build cannot execute JIT on
+an iPhone, render a game or confirm entitlement availability. The FEX runtime
+adapter executed real translated x86 test programs in Linux VIXL simulation;
+that does not establish device runtime readiness.
 
-Remaining work includes the Darwin JIT/signal/allocation bootstrap, executable
-mapping callbacks and complete typed HLE registration, plus compatible iOS
-MoltenVK/FFmpeg dependencies and the final app link/device tests. The iPhoneOS
-FEX build itself must be assessed from the recorded run. Only the explicit
-diagnostic compatibility patch is applied; Linux test shims are not used.
+Darwin JIT allocation, guest fault-register recovery and executable mapping
+callbacks are implemented. Startup requires a real ARM execution check after
+debugger detach and an x86 execution check through FEX. They have not been run
+on a physical phone here. Asynchronous guest signal delivery and full HLE ABI
+coverage remain incomplete. Only the explicit diagnostic compatibility patch
+is applied to FEX; Linux test shims are not used in the device app.
 
-Once the missing platform integration and dependencies exist, the reconstructed
-source has `tools/build_ipa.py`. That build requires a fresh device app, verifies
+The reconstructed source's `tools/build_ipa.py` requires a fresh device app, verifies
 the updated core identity and new renderer objects in the final link map, and
 only then packages an unsigned IPA. A passing object-compile job must not be
 presented as that milestone.
