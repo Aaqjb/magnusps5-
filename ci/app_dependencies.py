@@ -12,6 +12,7 @@ import urllib.request
 MOLTENVK_URL = 'https://github.com/KhronosGroup/MoltenVK/releases/download/v1.4.2/MoltenVK-ios.tar'
 MOLTENVK_SHA256 = 'b5d947b1660e6e9fed40b9cd2387e160aaab9e80b775c0cef7e14059405178c1'
 FFMPEG_REVISION = '9bc0bcce7a03701025d7002271ddc2ce4f351908'  # n5.1.8
+FFMPEG_COMPONENTS = ('avcodec', 'avformat', 'avutil', 'swscale', 'swresample')
 
 
 def run(*args, cwd=None):
@@ -22,11 +23,32 @@ def output(*args):
     return subprocess.check_output([str(a) for a in args], text=True).strip()
 
 
+def verify(root):
+    record = json.loads((root / 'dependencies.json').read_text())
+    if (record['moltenvk_url'] != MOLTENVK_URL or
+            record['moltenvk_archive_sha256'] != MOLTENVK_SHA256 or
+            record['ffmpeg_revision'] != FFMPEG_REVISION):
+        raise ValueError('Cached dependency pins do not match this build')
+    files = record['installed_files']
+    actual = {p.relative_to(root).as_posix() for folder in ('MoltenVK', 'ffmpeg')
+              for p in (root / folder).rglob('*') if p.is_file()}
+    if set(files) != actual:
+        raise ValueError('Cached dependency file set changed')
+    for name, digest in files.items():
+        if hashlib.sha256((root / name).read_bytes()).hexdigest() != digest:
+            raise ValueError(f'Cached dependency checksum mismatch: {name}')
+    print('Verified all cached dependency files and source pins.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=Path('build-dependencies'))
+    parser.add_argument('--verify', action='store_true', help='Verify a restored dependency cache')
     args = parser.parse_args()
     root = args.output.resolve()
+    if args.verify:
+        verify(root)
+        return
     root.mkdir(parents=True, exist_ok=False)
     archive = root / 'MoltenVK-ios.tar'
     urllib.request.urlretrieve(MOLTENVK_URL, archive)
@@ -65,7 +87,7 @@ def main():
     run('make', '-j3', cwd=source)
     run('make', 'install', cwd=source)
     hashes = {}
-    for component in ('avcodec', 'avformat', 'avutil', 'swscale', 'swresample'):
+    for component in FFMPEG_COMPONENTS:
         path = prefix / f'lib/lib{component}.a'
         if output('xcrun', 'lipo', '-archs', path) != 'arm64':
             raise ValueError(f'Wrong FFmpeg architecture: {path}')
@@ -74,6 +96,9 @@ def main():
         'moltenvk_url': MOLTENVK_URL, 'moltenvk_archive_sha256': MOLTENVK_SHA256,
         'moltenvk_library_sha256': hashlib.sha256(library.read_bytes()).hexdigest(),
         'ffmpeg_revision': FFMPEG_REVISION, 'ffmpeg_libraries': hashes,
+        'installed_files': {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                            for folder in ('MoltenVK', 'ffmpeg')
+                            for p in sorted((root / folder).rglob('*')) if p.is_file()},
         'status': 'Device dependency build only; game compatibility not established'
     }, indent=2) + '\n')
 

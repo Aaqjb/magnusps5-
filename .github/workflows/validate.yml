@@ -112,8 +112,29 @@ jobs:
         run: cmake --build build-fex --target FEXCore FEXCore_Base JemallocLibs tiny-json --parallel 2 -- -k 0 2>&1 | tee evidence/fex-build.log
       - name: Strictly link FEX and our bridge without unresolved-symbol fallback
         run: python3 ci/link_fex_bridge.py --fex-build build-fex --evidence evidence 2>&1 | tee evidence/link.log
+      - name: Restore verified device dependencies
+        id: device-dependencies
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: device-deps-${{ runner.os }}-${{ runner.arch }}-xcode16.4-${{ hashFiles('ci/app_dependencies.py') }}
+          path: |
+            build-dependencies/MoltenVK
+            build-dependencies/ffmpeg
+            build-dependencies/dependencies.json
       - name: Obtain checked device graphics and build pinned audio dependencies
+        if: steps.device-dependencies.outputs.cache-hit != 'true'
         run: python3 ci/app_dependencies.py 2>&1 | tee evidence/dependencies.log
+      - name: Verify restored or freshly built dependency bytes
+        run: python3 ci/app_dependencies.py --verify 2>&1 | tee evidence/dependency-verification.log
+      - name: Save verified dependencies before the app build
+        if: steps.device-dependencies.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          key: ${{ steps.device-dependencies.outputs.cache-primary-key }}
+          path: |
+            build-dependencies/MoltenVK
+            build-dependencies/ffmpeg
+            build-dependencies/dependencies.json
       - name: Install the host shader compiler
         run: brew install glslang
       - name: Build the complete app and verify its active core before packaging
