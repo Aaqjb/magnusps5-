@@ -33,9 +33,11 @@ Under **Actions → Reconstructed core and iPhoneOS compile → Run workflow**:
 - macOS: real iPhoneOS/arm64 compilation of the UIKit app source, JIT protocol
   and CPU interface; compilation of our bridge against FEX's real generated
   headers and ABI options; and an independent native iPhoneOS FEXCore build.
-- A strict diagnostic dylib link includes the complete FEX archives, supporting
-  libraries and our bridge objects. Undefined symbols fail the link; no fallback
-  symbol lookup or dead stripping is used. This dylib is not the Magnus app.
+- A strict diagnostic dylib link force-loads both complete FEX core archives
+  with our bridge, CPU interface and real Magnus cache-flush implementation.
+  Support libraries resolve the core's references normally. Undefined symbols
+  fail the link; no fallback symbol lookup or dead stripping is used. This
+  dylib is not the Magnus app.
 - All steps are required. Compiler errors fail the run and are preserved in
   diagnostic artifacts. A failure does not silently select an older core.
 

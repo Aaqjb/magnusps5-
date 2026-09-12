@@ -40,6 +40,7 @@ def main():
                 'status': 'iPhoneOS object compilation only; no app link or runtime validation'}
     units = [('ios/App/Main.mm', 'clang++', ['-std=c++20', '-fobjc-arc']),
              ('src/ios/jitProtocol.c', 'clang', ['-O2']),
+             ('src/ios/cache.cpp', 'clang++', ['-std=c++20']),
              ('src/common/guestCpu.cpp', 'clang++', ['-std=c++20'])]
     for source, compiler, flags in units:
         obj = args.output / (Path(source).name + '.o')

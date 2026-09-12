@@ -2,8 +2,9 @@
 """Strictly link the real native FEX archives and bridge into a diagnostic dylib.
 
 This is a link test, not the Magnus app, an IPA, or a device execution test.
-Whole-archive loading keeps missing symbols visible. Undefined-symbol fallback,
-stub functions and dead stripping are not used.
+Whole-core archive loading keeps missing symbols visible. Support libraries
+resolve the core's references normally. No undefined-symbol fallback, substitute
+functions or dead stripping are used.
 """
 import argparse
 import hashlib
@@ -30,7 +31,7 @@ def main():
     ]
     archives = [build / name for name in libraries]
     objects = [evidence / 'bridge/FexRuntime.cpp.o', evidence / 'bridge/KytyAdapter.cpp.o',
-               evidence / 'iphoneos/guestCpu.cpp.o']
+               evidence / 'iphoneos/guestCpu.cpp.o', evidence / 'iphoneos/cache.cpp.o']
     for path in [*archives, *objects]:
         if not path.is_file():
             raise FileNotFoundError(path)
@@ -42,9 +43,11 @@ def main():
     mapping = destination / 'MagnusFexLinkProbe.map'
     sdk = output('xcrun', '--sdk', 'iphoneos', '--show-sdk-path')
     command = ['xcrun', '--sdk', 'iphoneos', 'clang++', '-target', 'arm64-apple-ios17.4',
-               '-isysroot', sdk, '-dynamiclib', '-Wl,-undefined,error', '-Wl,-all_load',
+               '-isysroot', sdk, '-dynamiclib', '-Wl,-undefined,error',
                '-Wl,-map,' + str(mapping), '-install_name', '@rpath/MagnusFexLinkProbe.dylib',
-               *(str(path) for path in [*objects, *archives]), '-o', str(library)]
+               *(str(path) for path in objects),
+               *('-Wl,-force_load,' + str(path) for path in archives[:2]),
+               *(str(path) for path in archives[2:]), '-o', str(library)]
     print(' '.join(command), flush=True)
     subprocess.run(command, check=True)
     product = verify_object(library)
