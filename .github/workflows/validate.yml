@@ -99,10 +99,15 @@ jobs:
             -DENABLE_FEX_ALLOCATOR=OFF -DENABLE_JEMALLOC_GLIBC_ALLOC=OFF \
             -DENABLE_OFFLINE_TELEMETRY=OFF -DENABLE_GDB_SYMBOLS=OFF \
             2>&1 | tee evidence/fex-configure.log
-      - name: Build actual FEXCore for iPhoneOS
-        run: cmake --build build-fex --target FEXCore --parallel 2 2>&1 | tee evidence/fex-build.log
+      - name: Generate FEX's real interface headers
+        run: cmake --build build-fex --target IR_INC CONFIG_INC --parallel 2 2>&1 | tee evidence/fex-headers.log
       - name: Compile our bridge against that exact FEX configuration
         run: python3 ci/compile_fex_bridge.py --source checkout --fex-build build-fex --output evidence/bridge 2>&1 | tee evidence/bridge.log
+      - name: Build actual FEXCore and collect all independent compiler errors
+        if: ${{ !cancelled() && hashFiles('build-fex/build.ninja') != '' }}
+        # Ninja continues independent files but still returns failure. This
+        # exposes all native-port errors without weakening the required gate.
+        run: cmake --build build-fex --target FEXCore --parallel 2 -- -k 0 2>&1 | tee evidence/fex-build.log
       - name: Confirm FEX source was not modified
         if: always()
         run: |

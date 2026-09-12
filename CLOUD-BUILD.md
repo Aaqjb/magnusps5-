@@ -31,8 +31,8 @@ Under **Actions → Reconstructed core and iPhoneOS compile → Run workflow**:
 - Linux: actual production source-selection audit, Python/JavaScript checks,
   and seven compiled CPU-side regression executables.
 - macOS: real iPhoneOS/arm64 compilation of the UIKit app source, JIT protocol
-  and CPU interface; then a native iPhoneOS FEXCore build and compilation of our
-  bridge against its real generated headers and ABI options.
+  and CPU interface; compilation of our bridge against FEX's real generated
+  headers and ABI options; and an independent native iPhoneOS FEXCore build.
 - All steps are required. Compiler errors fail the run and are preserved in
   diagnostic artifacts. A failure does not silently select an older core.
 
@@ -47,6 +47,11 @@ fail visibly until the environment is deliberately updated.
 The FEX cross-build uses `TUNE_CPU=none` and `TUNE_ARCH=generic`. This retains
 Clang's explicit arm64 iPhoneOS target instead of trying to tune for a Linux
 runner CPU through `/proc/cpuinfo`. It requires no edits to FEX source.
+
+The full FEX compile keeps going through independent files after an error and
+still fails the job. This gathers the real native-port errors in one run.
+Bridge object compilation does not depend on a completed FEX archive, so a
+dependency failure cannot conceal whether our own adapter compiles for iOS.
 
 ## What passing does not prove
 
