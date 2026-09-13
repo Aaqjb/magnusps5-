@@ -59,7 +59,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -116,7 +116,7 @@ jobs:
         id: device-dependencies
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          key: device-deps-${{ runner.os }}-${{ runner.arch }}-xcode16.4-${{ hashFiles('ci/app_dependencies.py') }}
+          key: device-deps-${{ runner.os }}-${{ runner.arch }}-xcode26.3-${{ hashFiles('ci/app_dependencies.py') }}
           path: |
             build-dependencies/MoltenVK
             build-dependencies/ffmpeg

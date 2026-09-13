@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build pinned FFmpeg 5 and verify official MoltenVK device archives."""
+"""Build the FFmpeg 7 ABI used by Kyty and verify official MoltenVK device archives."""
 import argparse
 import hashlib
 import json
@@ -11,7 +11,7 @@ import urllib.request
 
 MOLTENVK_URL = 'https://github.com/KhronosGroup/MoltenVK/releases/download/v1.4.2/MoltenVK-ios.tar'
 MOLTENVK_SHA256 = 'b5d947b1660e6e9fed40b9cd2387e160aaab9e80b775c0cef7e14059405178c1'
-FFMPEG_REVISION = '9bc0bcce7a03701025d7002271ddc2ce4f351908'  # n5.1.8
+FFMPEG_REVISION = 'f46e514491172d15bd74b4abb1814cd2f05a763e'  # n7.1.3
 FFMPEG_COMPONENTS = ('avcodec', 'avformat', 'avutil', 'swscale', 'swresample')
 
 

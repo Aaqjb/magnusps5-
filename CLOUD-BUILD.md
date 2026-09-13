@@ -29,7 +29,8 @@ moving upstream branches are not build inputs.
 Under **Actions → Reconstructed core and full iPhoneOS build → Run workflow**:
 
 - Linux: actual production source-selection audit, Python/JavaScript checks,
-  and eight compiled CPU-side regression executables, including page protection.
+  and nine compiled CPU-side regression executables, including page protection
+  and thread cancellation, joining and ownership transfer.
 - macOS: real iPhoneOS/arm64 compilation of the UIKit app source, JIT protocol
   and CPU interface; compilation of our bridge against FEX's real generated
   headers and ABI options; and an independent native iPhoneOS FEXCore build.
@@ -39,7 +40,8 @@ Under **Actions → Reconstructed core and full iPhoneOS build → Run workflow*
   fail the link; no fallback symbol lookup or dead stripping is used. This
   dylib is not the Magnus app.
 - The full app build uses verified MoltenVK 1.4.2 device libraries and a pinned
-  FFmpeg 5.1.8 source build. Dependencies are cached after every installed file
+  FFmpeg 7.1.3 source build matching the core's libavcodec 61 API. Dependencies
+  are cached after every installed file
   is hashed; restored caches must match those hashes and source pins.
 - The complete app links the new core, FEX bridge and native startup. Packaging
   requires device arm64/iOS metadata, the reviewed core identity, and renderer
@@ -52,9 +54,14 @@ Actions are SHA-pinned, use read-only repository access, retain small diagnostic
 artifacts for three days, and use standard hosted runners. No signing secrets,
 device credentials, game files, or original IPA are uploaded or required.
 
-The selected Apple environment is `macos-15` with Xcode 16.4 and an iOS 17.4
+The selected Apple environment is `macos-15` with Xcode 26.3 and an iOS 17.4
 deployment target. If GitHub removes that Xcode installation, the run should
 fail visibly until the environment is deliberately updated.
+
+Xcode 26 supplies the MetalFX frame-interpolation declarations used by the
+existing iOS presentation code. The runtime iOS 26 availability checks remain.
+The renderer uses real host threads with explicit cooperative cancellation and
+joining because the older supported iOS C++ library lacks `std::jthread`.
 
 The FEX cross-build uses `TUNE_CPU=none` and `TUNE_ARCH=generic`. This retains
 Clang's explicit arm64 iPhoneOS target instead of trying to tune for a Linux
