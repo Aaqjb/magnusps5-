@@ -1,0 +1,74 @@
+name: Publish verified run 23 IPA release
+
+on:
+  push:
+    paths:
+      - .github/workflows/publish-run23-release.yml
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified SideStore-ready artifact from run 23
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/actions/artifacts/10316354971/zip" \
+            > artifact.zip
+          unzip -q artifact.zip -d artifact
+
+          mapfile -t IPAS < <(find artifact -type f -name '*.ipa' -print)
+          if [ "${#IPAS[@]}" -ne 1 ]; then
+            echo "Expected exactly one IPA in verified artifact, found ${#IPAS[@]}" >&2
+            find artifact -maxdepth 4 -type f -print >&2
+            exit 1
+          fi
+
+          cp "${IPAS[0]}" MagnusPS5-SideStore-ready.ipa
+          sha256sum MagnusPS5-SideStore-ready.ipa | tee MagnusPS5-SideStore-ready.ipa.sha256
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: magnusps5-fex-preview-2026-09-13
+          TARGET: 68817504edf0e7170b9784d753c23c408f1267fd
+        run: |
+          set -euo pipefail
+
+          cat > release-notes.md <<'EOF'
+          ## MagnusPS5 FEX preview
+
+          SideStore-ready iPhoneOS build produced by successful workflow run #23.
+
+          This build includes the reconstructed Kyty core, native iPhoneOS FEXCore integration, the Magnus FEX bridge, the original Magnus StikDebug/JIT protocol, and the SideStore capability/signing preparation verified by CI.
+
+          **Status:** build/link/package/runtime-path checks passed in CI. Physical iPhone execution and game compatibility are still device-unverified.
+
+          Build target commit: `68817504edf0e7170b9784d753c23c408f1267fd`
+          Source workflow run: `34754123788`
+          EOF
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              MagnusPS5-SideStore-ready.ipa \
+              MagnusPS5-SideStore-ready.ipa.sha256 \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" \
+              MagnusPS5-SideStore-ready.ipa \
+              MagnusPS5-SideStore-ready.ipa.sha256 \
+              --target "$TARGET" \
+              --title "MagnusPS5 FEX Preview - 2026-09-13" \
+              --notes-file release-notes.md \
+              --prerelease \
+              --repo "$GITHUB_REPOSITORY"
+          fi
