@@ -50,14 +50,6 @@ def fmt_version(fmt_root: Path) -> tuple[int, Path]:
     raise RuntimeError(f"Could not find FMT_VERSION under {fmt_root}")
 
 
-def sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
 def run(*args: str) -> None:
     print(" ".join(str(arg) for arg in args), flush=True)
     subprocess.run([str(arg) for arg in args], check=True)
