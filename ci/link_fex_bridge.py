@@ -75,6 +75,16 @@ def main():
         '--evidence', str(evidence / 'shared-fmt.json'),
     ], check=True)
 
+    # The final executable has already been proven capable of linking with the
+    # shared fmt arrangement. Patch only the reconstructed packaging verifier so
+    # an Apple linker-map byte outside UTF-8 cannot crash Python after a successful
+    # link. The patch helper exact-matches one expression and records hashes.
+    subprocess.run([
+        sys.executable, str(ROOT / 'ci/patch_build_ipa_reader.py'),
+        '--source', str(ROOT / 'checkout'),
+        '--evidence', str(evidence / 'build-ipa-reader-patch.json'),
+    ], check=True)
+
 
 if __name__ == '__main__':
     main()
