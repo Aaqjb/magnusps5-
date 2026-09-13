@@ -55,7 +55,7 @@ jobs:
           retention-days: 3
 
   iphoneos:
-    name: Full iPhoneOS app and verified unsigned IPA
+    name: Full iPhoneOS app and SideStore-ready IPA
     runs-on: macos-15
     timeout-minutes: 60
     env:
@@ -146,7 +146,17 @@ jobs:
             --ffmpeg-root build-dependencies/ffmpeg \
             --output build-app/MagnusPS5-unsigned.ipa \
             2>&1 | tee evidence/app-build.log
-      - name: Verify final executable reaches the real FEX runtime path
+      - name: Match the known-working SideStore capability request and ad-hoc transport signature
+        run: |
+          python3 ci/prepare_sidestore_package.py \
+            --build-dir build-app \
+            --source-ipa build-app/MagnusPS5-unsigned.ipa \
+            --output-ipa build-app/MagnusPS5-SideStore-ready.ipa \
+            --entitlements build-app/MagnusPS5-unsigned.entitlements \
+            --build-json build-app/MagnusPS5-unsigned.build.json \
+            --evidence evidence/sidestore-package.json \
+            2>&1 | tee evidence/sidestore-package.log
+      - name: Verify final signed executable reaches the real FEX runtime path
         run: |
           BINARY="$(find build-app -type f -path '*/MagnusPS5.app/MagnusPS5' -print -quit)"
           test -n "$BINARY"
@@ -155,17 +165,18 @@ jobs:
             --map build-app/MagnusPS5-unsigned.map \
             --output evidence/runtime-path.json \
             2>&1 | tee evidence/runtime-path.log
-      - name: Upload verified unsigned IPA
+      - name: Upload verified SideStore-ready IPA
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: MagnusPS5-unsigned-IPA-device-unverified
+          name: MagnusPS5-SideStore-ready-device-unverified
           if-no-files-found: error
           path: |
-            build-app/MagnusPS5-unsigned.ipa
+            build-app/MagnusPS5-SideStore-ready.ipa
             build-app/MagnusPS5-unsigned.build.json
             build-app/MagnusPS5-unsigned.map
             build-app/MagnusPS5-unsigned.entitlements
             evidence/runtime-path.json
+            evidence/sidestore-package.json
           retention-days: 7
       - name: Verify FEX has only the reviewed compatibility changes
         if: always()
