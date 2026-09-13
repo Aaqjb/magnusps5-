@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 from check_iphoneos import output, verify_object
 
@@ -59,6 +60,20 @@ def main():
         'input_archives': [{'path': name, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
                            for name, path in zip(libraries, archives)],
     }, indent=2) + '\n')
+
+    # The strict link above deliberately validates FEX with its own real fmt.
+    # The complete Magnus executable also links Kyty/Magnus's fmt archive. If
+    # both fmt archives are carried into that final static link, their identical
+    # fmt::v12 definitions collide. Only after this strict gate succeeds, prepare
+    # the FEX build tree so the final app resolves FEX's fmt references from the
+    # single Magnus/Kyty fmt implementation. This does not suppress linker errors.
+    subprocess.run([
+        sys.executable, str(ROOT / 'ci/prepare_shared_fmt.py'),
+        '--source', str(ROOT / 'checkout'),
+        '--fex-root', str(ROOT / 'fex'),
+        '--fex-build', str(build),
+        '--evidence', str(evidence / 'shared-fmt.json'),
+    ], check=True)
 
 
 if __name__ == '__main__':
