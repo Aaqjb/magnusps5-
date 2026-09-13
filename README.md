@@ -1,6 +1,6 @@
 # magnusps5-
 
-Experimental reconstruction using Kyty revision `dff2b19c56f9` (12 September 2026).
+Experimental reconstruction using Kyty revision `d3d7bd33f8eb` (13 September 2026).
 
 [Build instructions and current limits](CLOUD-BUILD.md) ·
 [Verified build results](VALIDATION.md) ·

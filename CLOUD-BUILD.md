@@ -1,7 +1,7 @@
 # MagnusPS5 reconstruction — cloud validation
 
 This repository builds the reconstructed source based on Kyty revision
-`dff2b19c56f9f4309a40017e15c0d2f80fec2605`. It does not use an existing IPA or an
+`d3d7bd33f8eb4996cf198c430bb2e4fa4bf518eb`. It does not use an existing IPA or an
 old precompiled emulator library. The reconstruction is experimental, not a
 working PS5 emulator release.
 
